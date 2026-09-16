@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Siaga Pangan</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root{
+    color-scheme: light;
+    --page:           #eef1ee;
+    --surface-1:      #ffffff;
+    --surface-2:      #f5f7f4;
+    --text-primary:   #10120f;
+    --text-secondary: #52564f;
+    --muted:          #868a80;
+    --grid:           #e3e6df;
+    --baseline:       #c7cbc0;
+    --border:         rgba(16,18,15,0.09);
+    --brand:          #2a78d6;
+    --brand-dark:     #184f95;
+    --series-1:       #2a78d6;
+    --cat-1:          #2a78d6;
+    --cat-2:          #eb6834;
+    --cat-3:          #1baf7a;
+    --div-pos:        #e34948;
+    --div-neg:        #2a78d6;
+    --div-mid:        #eceee9;
+    --status-good:    #0ca30c;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+    --status-critical:#d03b3b;
+    --seq-1: #eef4fc; --seq-2: #b7d3f6; --seq-3: #6da7ec; --seq-4: #2a78d6; --seq-5: #0d366b;
+    --info-tint:      rgba(42,120,214,0.08);
+    --card-radius: 16px;
+    --shadow: 0 1px 2px rgba(16,18,15,0.04), 0 8px 24px -16px rgba(16,18,15,0.16);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --page:           #0e0f0d;
+      --surface-1:      #191b18;
+      --surface-2:      #14150f;
+      --text-primary:   #f6f7f4;
+      --text-secondary: #c3c6bc;
+      --muted:          #8b8f85;
+      --grid:           #2b2d28;
+      --baseline:       #3a3d36;
+      --border:         rgba(255,255,255,0.09);
+      --brand:          #3987e5;
+      --series-1:       #3987e5;
+      --cat-1:          #3987e5;
+      --cat-2:          #d95926;
+      --cat-3:          #199e70;
+      --div-pos:        #e66767;
+      --div-neg:        #3987e5;
+      --div-mid:        #34362f;
+      --info-tint:      rgba(57,135,229,0.14);
+      --seq-1: #22303f; --seq-2: #1c5cab; --seq-3: #3987e5; --seq-4: #6da7ec; --seq-5: #b7d3f6;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -16px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:           #0e0f0d;
+    --surface-1:      #191b18;
+    --surface-2:      #14150f;
+    --text-primary:   #f6f7f4;
+    --text-secondary: #c3c6bc;
+    --muted:          #8b8f85;
+    --grid:           #2b2d28;
+    --baseline:       #3a3d36;
+    --border:         rgba(255,255,255,0.09);
+    --brand:          #3987e5;
+    --series-1:       #3987e5;
+    --cat-1:          #3987e5;
+    --cat-2:          #d95926;
+    --cat-3:          #199e70;
+    --div-pos:        #e66767;
+    --div-neg:        #3987e5;
+    --div-mid:        #34362f;
+    --info-tint:      rgba(57,135,229,0.14);
+    --seq-1: #22303f; --seq-2: #1c5cab; --seq-3: #3987e5; --seq-4: #6da7ec; --seq-5: #b7d3f6;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -16px rgba(0,0,0,0.5);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0; background:var(--page); color:var(--text-primary); font-family: system-ui,-apple-system,"Segoe UI",sans-serif;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+  .wrap{max-width:1260px; margin:0 auto; padding:0 20px 90px;}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky; top:0; z-index:1100; background:color-mix(in srgb, var(--page) 82%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--border);}
+  .topbar-inner{max-width:1260px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .brand-mark{font-weight:750; font-size:15px; letter-spacing:.2px; white-space:nowrap; display:flex; align-items:center; gap:7px;}
+  .brand-mark .sw{width:9px; height:9px; border-radius:3px; background:var(--brand);}
+  .pillnav{display:flex; gap:3px; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:3px; flex-wrap:wrap; margin-left:auto;}
+  .pillnav a{padding:7px 13px; border-radius:999px; color:var(--text-secondary); text-decoration:none; font-size:12.3px; font-weight:600; white-space:nowrap; transition:background .15s,color .15s;}
+  .pillnav a.active{background:var(--brand); color:#fff;}
+  .pillnav a:not(.active):hover{background:var(--border); color:var(--text-primary);}
+  .themebtn{width:32px; height:32px; border-radius:50%; border:1px solid var(--border); background:var(--surface-2); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); flex:none;}
+  .themebtn svg{width:15px; height:15px;}
+  .themebtn:hover{color:var(--text-primary);}
+
+  /* ---------- hero ---------- */
+  .hero{padding:44px 0 22px;}
+  .hero-emoji{font-size:30px; line-height:1;}
+  .hero-top{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  h1{font-size:clamp(24px,3.6vw,34px); line-height:1.18; margin:0 0 12px; font-weight:750; letter-spacing:-.01em;}
+  .lede{font-size:15px; line-height:1.6; color:var(--text-secondary); max-width:740px; margin:0 0 4px;}
+  .meta-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;}
+  .meta-chip{font-size:11.8px; color:var(--text-secondary); background:var(--surface-1); border:1px solid var(--border); border-radius:999px; padding:6px 12px;}
+  .meta-chip b{color:var(--text-primary); font-weight:650;}
+
+  section{padding:40px 0; scroll-margin-top:60px;}
+  .section-head{margin-bottom:20px; display:flex; align-items:flex-start; gap:10px;}
+  .section-bar{width:4px; border-radius:3px; background:var(--brand); flex:none; align-self:stretch; min-height:34px;}
+  h2{font-size:20px; margin:0 0 6px; font-weight:750; letter-spacing:-.01em;}
+  .section-desc{font-size:13.3px; color:var(--text-secondary); max-width:720px; line-height:1.55; margin:0;}
+  .card-title{font-size:13px; font-weight:700; margin-bottom:4px;}
+  .card-sub{font-size:11.8px; color:var(--muted); margin-bottom:10px; line-height:1.5;}
+
+  /* ---------- stat tiles ---------- */
+  .tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  @media (max-width:760px){ .tiles{grid-template-columns:repeat(2,1fr);} }
+  .tile{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--card-radius); padding:16px 16px 14px; box-shadow:var(--shadow); border-top:3px solid var(--tile-accent, var(--brand));}
+  .tile-label{font-size:12px; font-weight:650; color:var(--text-secondary); display:flex; align-items:center; gap:6px; margin-bottom:8px;}
+  .tile-label .sdot{width:8px; height:8px; border-radius:50%; background:var(--tile-accent);}
+  .tile-value{font-size:30px; font-weight:750; letter-spacing:-.02em; line-height:1;}
+  .tile-sub{font-size:11.5px; color:var(--muted); margin-top:6px;}
+
+  .card{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--card-radius); padding:20px; box-shadow:var(--shadow); min-width:0;}
+  .card + .card{margin-top:16px;}
+  .grid-2{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:16px; align-items:start;}
+  .grid-even{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start;}
+  @media (max-width:900px){ .grid-2, .grid-even{grid-template-columns:minmax(0,1fr);} }
+
+  .info-box{margin-top:14px; background:var(--info-tint); border:1px solid color-mix(in srgb, var(--brand) 30%, transparent); border-radius:12px; padding:14px 16px; display:flex; gap:10px; align-items:flex-start;}
+  .info-box > svg{width:16px; height:16px; color:var(--brand); flex:none; margin-top:1px;}
+  .info-box .ibtext{font-size:12.8px; color:var(--text-secondary); line-height:1.6;}
+  .info-box .ibtext b{color:var(--text-primary); font-weight:700;}
+  .info-box .cprov{margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;}
+  .linkchip{font-size:12px; border:1px solid color-mix(in srgb, var(--brand) 35%, transparent); background:var(--surface-1); color:var(--text-primary); border-radius:999px; padding:3px 10px; cursor:pointer;}
+  .linkchip:hover{border-color:var(--brand);}
+
+  .headline-stat{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--card-radius); padding:20px 22px; margin-top:14px; box-shadow:var(--shadow);}
+  .headline-stat .num{font-size:44px; font-weight:750; letter-spacing:-.02em; color:var(--brand);}
+  .headline-stat .txt{font-size:13.3px; color:var(--text-secondary); max-width:540px; line-height:1.55;}
+
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--text-secondary); margin-top:10px; align-items:center;}
+  .legend-item{display:flex; align-items:center; gap:6px;}
+  .swatch{width:10px; height:10px; border-radius:3px; flex:none;}
+  .grad-bar{width:140px; height:9px; border-radius:5px; flex:none;}
+
+  #tooltip{position:fixed; z-index:2000; pointer-events:none; background:var(--text-primary); color:var(--page); border-radius:9px; padding:10px 13px; font-size:12.3px; line-height:1.55; box-shadow:0 10px 28px rgba(0,0,0,.22); max-width:270px; opacity:0; transform:translateY(4px); transition:opacity .1s ease;}
+  #tooltip.show{opacity:1;}
+  #tooltip .tt-title{font-weight:700; margin-bottom:3px;}
+  #tooltip .tt-row{display:flex; justify-content:space-between; gap:14px;}
+  #tooltip .tt-val{font-weight:700; font-variant-numeric:tabular-nums; text-align:right;}
+  #tooltip .tt-key{color:color-mix(in srgb, var(--page) 62%, transparent);}
+  #tooltip .tt-div{height:1px; background:color-mix(in srgb, var(--page) 20%, transparent); margin:6px 0;}
+
+  .pill{display:inline-flex; align-items:center; gap:6px; font-size:11.8px; font-weight:650; padding:4px 9px 4px 7px; border-radius:999px; white-space:nowrap;}
+  .pill svg{width:13px; height:13px; flex:none;}
+  .pill-tahan{background:color-mix(in srgb, var(--status-good) 14%, transparent);}
+  .pill-waspada{background:color-mix(in srgb, var(--status-warning) 22%, transparent);}
+  .pill-rentan{background:color-mix(in srgb, var(--status-serious) 20%, transparent);}
+  .pill-kritis{background:color-mix(in srgb, var(--status-critical) 16%, transparent);}
+  .pill-tahan svg{color:var(--status-good);} .pill-waspada svg{color:var(--status-warning);}
+  .pill-rentan svg{color:var(--status-serious);} .pill-kritis svg{color:var(--status-critical);}
+
+  /* ---------- filters ---------- */
+  .filter-row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
+  .search{flex:1 1 220px; min-width:180px; padding:9px 12px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary); font-size:13px;}
+  .search:focus{outline:2px solid var(--brand); outline-offset:-1px;}
+  .select{padding:9px 30px 9px 12px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary); font-size:13px; min-width:220px; max-width:100%; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23868a80' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; cursor:pointer;}
+  .select:focus{outline:2px solid var(--brand); outline-offset:-1px;}
+  .select.small{min-width:0; padding:6px 28px 6px 10px; font-size:12.3px;}
+  .hint{font-size:11.8px; color:var(--muted);}
+
+  .cat-row{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .cat-label{font-size:12px; color:var(--muted); font-weight:600; margin-right:2px;}
+  .chip{padding:6px 11px; border-radius:999px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-secondary); font-size:12.3px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; line-height:1.2;}
+  .chip:hover{border-color:var(--baseline); color:var(--text-primary);}
+  .chip .cdot{width:9px; height:9px; border-radius:50%; flex:none; border:1.5px solid transparent;}
+  .chip .ccount{color:var(--muted); font-weight:500; font-variant-numeric:tabular-nums;}
+  .chip[aria-pressed="true"]{background:var(--surface-1); color:var(--text-primary); border-color:color-mix(in srgb, var(--brand) 45%, var(--border));}
+  .chip[aria-pressed="false"]{color:var(--muted);}
+  .chip[aria-pressed="false"] .cdot{background:transparent !important;}
+  .chip[aria-pressed="false"] .clabel{text-decoration:line-through; text-decoration-color:color-mix(in srgb, var(--muted) 60%, transparent);}
+  .chip.all[aria-pressed="true"]{background:var(--text-primary); color:var(--page); border-color:var(--text-primary);}
+  .linkbtn{border:0; background:none; color:var(--brand); font-size:12.3px; font-weight:650; cursor:pointer; padding:4px 2px;}
+  .linkbtn:hover{text-decoration:underline;}
+  .filter-note{font-size:12px; color:var(--text-secondary); display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .filter-note[hidden]{display:none;}
+
+  .popover{position:fixed; z-index:1500; background:var(--surface-1); border:1px solid var(--border); border-radius:12px; box-shadow:0 12px 32px -8px rgba(0,0,0,.28); padding:8px; min-width:210px;}
+  .popover .ph{font-size:11.5px; color:var(--muted); font-weight:650; padding:4px 8px 6px; text-transform:uppercase; letter-spacing:.04em;}
+  .popover label{display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; font-size:13px; cursor:pointer; color:var(--text-primary);}
+  .popover label:hover{background:var(--surface-2);}
+  .popover input{accent-color:var(--brand); width:15px; height:15px; margin:0;}
+  .popover .cdot{width:9px; height:9px; border-radius:50%; flex:none;}
+  .popover .ccount{margin-left:auto; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums;}
+  .popover .pf{display:flex; justify-content:space-between; border-top:1px solid var(--border); margin-top:6px; padding:6px 4px 0;}
+
+  /* ---------- table ---------- */
+  .table-scroll{overflow-x:auto; border-radius:12px; border:1px solid var(--border);}
+  table{width:100%; border-collapse:collapse; font-size:12.6px; min-width:1040px;}
+  thead th{position:sticky; top:0; background:var(--surface-2); text-align:left; padding:10px 12px; font-weight:650; color:var(--text-secondary); border-bottom:1px solid var(--border); cursor:pointer; white-space:nowrap; user-select:none;}
+  thead th:hover{color:var(--text-primary);}
+  thead th .arrow{opacity:.35; font-size:10px; margin-left:3px;}
+  thead th.sorted .arrow{opacity:1;}
+  .thf{border:1px solid transparent; background:none; color:var(--muted); cursor:pointer; padding:2px 4px; margin-left:4px; border-radius:6px; vertical-align:middle; display:inline-flex; align-items:center; gap:3px; font-size:10.5px; font-weight:700;}
+  .thf svg{width:12px; height:12px;}
+  .thf:hover{color:var(--text-primary); background:var(--border);}
+  .thf.active{color:var(--brand); border-color:color-mix(in srgb, var(--brand) 40%, transparent); background:var(--info-tint);}
+  tbody td{padding:9px 12px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:middle;}
+  tbody tr{cursor:pointer;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--surface-2);}
+  tbody tr.sel{background:var(--info-tint); box-shadow:inset 3px 0 0 var(--brand);}
+  td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
+  td.rank{color:var(--muted); font-variant-numeric:tabular-nums; font-weight:650;}
+  .rowname{font-weight:650;}
+  .rec-cell{color:var(--text-secondary); font-size:12px; max-width:230px;}
+  .table-empty{padding:30px; text-align:center; color:var(--muted); font-size:13px; cursor:default;}
+  .count-note{font-size:11.8px; color:var(--muted); margin-top:10px;}
+
+  /* ---------- map + side panel ---------- */
+  .map-toolbar{display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px;}
+  .map-grid{display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:16px; align-items:stretch;}
+  @media (max-width:1000px){ .map-grid{grid-template-columns:minmax(0,1fr);} }
+  #mapEl{width:100%; height:640px; border-radius:12px; overflow:hidden; border:1px solid var(--border);}
+  @media (max-width:600px){ #mapEl{height:420px;} }
+  .leaflet-container{background:var(--surface-2); font-family:inherit;}
+  .map-legend-row{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:10px;}
+  .map-foot-note{font-size:11.5px; color:var(--muted);}
+
+  .side-panel{display:flex; flex-direction:column; height:680px; border:1px solid var(--border); border-radius:12px; background:var(--surface-2); overflow:hidden; min-width:0;}
+  @media (max-width:1000px){ .side-panel{height:auto; max-height:760px;} }
+  .side-detail{padding:14px 16px; background:var(--surface-1); border-bottom:1px solid var(--border); flex:none;}
+  .sd-empty{font-size:12.8px; color:var(--text-secondary); line-height:1.55; display:flex; gap:10px; align-items:flex-start;}
+  .sd-empty svg{width:18px; height:18px; color:var(--brand); flex:none; margin-top:1px;}
+  .sd-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .sd-rank{font-size:11.5px; color:var(--muted); font-weight:650; text-transform:uppercase; letter-spacing:.04em;}
+  .sd-name{font-size:18px; font-weight:750; letter-spacing:-.01em; margin-top:2px;}
+  .xbtn{width:28px; height:28px; border-radius:50%; border:1px solid var(--border); background:var(--surface-2); color:var(--text-secondary); cursor:pointer; font-size:16px; line-height:1; flex:none;}
+  .xbtn:hover{color:var(--text-primary);}
+  .sd-status{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:10px 0 12px; font-size:12px; color:var(--muted);}
+  .sd-metrics{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px 12px;}
+  @media (max-width:480px){ .sd-metrics{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  .sd-m{font-size:11px; color:var(--muted); line-height:1.3;}
+  .sd-m b{display:block; font-size:13.5px; color:var(--text-primary); font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .sd-rec{margin-top:10px; font-size:12px; color:var(--text-secondary); line-height:1.45; padding:7px 10px; border-radius:8px; background:var(--surface-2);}
+  .sd-rec b{color:var(--text-primary);}
+  .sd-foot{margin-top:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;}
+  .side-list-head{padding:10px 16px 8px; flex:none; border-bottom:1px solid var(--border);}
+  .side-list-head .t{font-size:12.5px; font-weight:700;}
+  .side-list-head .s{font-size:11.3px; color:var(--muted); margin-top:2px;}
+  .side-list-sort{display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap;}
+  .side-list-sort .cat-label{font-size:11.3px;}
+  .side-list{overflow-y:auto; flex:1; position:relative; min-height:160px;}
+  .prow{display:grid; grid-template-columns:24px minmax(0,1fr) auto; gap:10px; padding:8px 14px 8px 12px; border-bottom:1px solid var(--border); cursor:pointer; align-items:center; background:none; border-left:0; border-right:0; border-top:0; width:100%; text-align:left; color:inherit; font:inherit;}
+  .prow:hover{background:var(--surface-1);}
+  .prow.sel{background:var(--info-tint); box-shadow:inset 3px 0 0 var(--brand);}
+  .prow.static{cursor:default;}
+  .prow.static:hover{background:none;}
+  .prow .rk{font-size:12px; color:var(--muted); font-weight:700; font-variant-numeric:tabular-nums; text-align:right;}
+  .prow .nm{font-size:13px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .prow .mt{font-size:11.3px; color:var(--muted); font-variant-numeric:tabular-nums; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .kk-tag{font-size:9.5px; font-weight:700; letter-spacing:.02em; color:var(--muted); border:1px solid var(--border); border-radius:6px; padding:3px 6px; white-space:nowrap; text-transform:uppercase;}
+  .side-empty{padding:24px 16px; font-size:12.8px; color:var(--muted);}
+
+  /* ---------- kab/kota ---------- */
+  .gap-stat{display:flex; gap:22px; flex-wrap:wrap; margin-bottom:10px;}
+  .gap-stat .g{font-size:12px; color:var(--text-secondary);}
+  .gap-stat .g b{display:block; font-size:17px; color:var(--text-primary); font-weight:750; margin-top:2px;}
+  .kk-scroll{max-height:560px; overflow-y:auto; padding-right:4px;}
+  .kk-empty{padding:24px 4px; font-size:13px; color:var(--muted);}
+  .plot{width:100%;}
+
+  /* ---------- accordion ---------- */
+  details.accordion{background:var(--surface-1); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); overflow:hidden;}
+  details.accordion + details.accordion{margin-top:10px;}
+  details.accordion summary{list-style:none; cursor:pointer; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:13.5px;}
+  details.accordion summary::-webkit-details-marker{display:none;}
+  details.accordion summary .chev{width:16px; height:16px; color:var(--muted); transition:transform .18s ease; flex:none;}
+  details.accordion[open] summary .chev{transform:rotate(90deg);}
+  details.accordion .accordion-body{padding:0 20px 20px;}
+
+  .flow{display:grid; grid-template-columns:repeat(5,1fr); gap:12px;}
+  @media (max-width:980px){ .flow{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:560px){ .flow{grid-template-columns:1fr;} }
+  .flow-step{background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:14px;}
+  .flow-num{width:22px; height:22px; border-radius:50%; background:var(--brand); color:#fff; font-size:11.5px; font-weight:750; display:flex; align-items:center; justify-content:center; margin-bottom:10px;}
+  .flow-step h3{font-size:12.8px; margin:0 0 8px; font-weight:700;}
+  .flow-step ul{margin:0; padding-left:16px; font-size:11.5px; color:var(--text-secondary); line-height:1.6;}
+
+  .followup-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px;}
+  @media (max-width:760px){ .followup-grid{grid-template-columns:repeat(2,1fr);} }
+  .followup{border-radius:12px; padding:12px 14px; border:1px solid var(--border); background:var(--surface-2);}
+  .followup .ft{font-size:12.3px; font-weight:750; display:flex; align-items:center; gap:6px; margin-bottom:5px;}
+  .followup .fd{font-size:11.5px; color:var(--text-secondary); line-height:1.5;}
+
+  footer{padding:36px 0 10px; font-size:11.8px; color:var(--muted); line-height:1.7;}
+</style>
+</head>
+<body>
+
+<div id="tooltip"></div>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand-mark"><span class="sw"></span>Siaga Pangan</div>
+    <div class="pillnav" id="pillnav">
+      <a href="#ringkasan" data-target="ringkasan" class="active">Ringkasan</a>
+      <a href="#peta" data-target="peta">Peta</a>
+      <a href="#kuadran" data-target="kuadran">Kuadran</a>
+      <a href="#proyeksi" data-target="proyeksi">Proyeksi</a>
+      <a href="#wilayah" data-target="wilayah">Kab/Kota</a>
+      <a href="#tabel" data-target="tabel">Tabel</a>
+    </div>
+    <button class="themebtn" id="themeBtn" aria-label="Ganti tema" title="Ganti tema terang/gelap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="themeIcon"></svg>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="hero" id="ringkasan">
+    <div class="hero-top"><span class="hero-emoji">🌾</span></div>
+    <h1>Kerentanan pangan tidak selalu terlihat dari angka inflasi saja.</h1>
+    <p class="lede">Siaga Pangan memadukan struktur pengeluaran rumah tangga, inflasi pangan aktual, dan proyeksi tiga
+      bulan ke depan untuk memetakan provinsi yang paling berpotensi mengalami penurunan daya beli pangan &mdash;
+      termasuk wilayah yang tampak aman karena inflasinya rendah, padahal ruang anggarannya sudah sempit sejak awal.</p>
+    <div class="meta-row">
+      <span class="meta-chip"><b id="metaProv">38</b> provinsi</span>
+      <span class="meta-chip"><b id="metaKK">514</b> kabupaten/kota dipetakan</span>
+      <span class="meta-chip">Sumber: <b>BPS, 2025&ndash;2026</b></span>
+    </div>
+  </div>
+
+  <section id="kpi">
+    <div class="section-head"><div class="section-bar"></div>
+      <div><h2>Status kerentanan setelah proyeksi ditambahkan</h2>
+        <p class="section-desc">Empat status ini menunjukkan wilayah mana yang paling perlu diperhatikan lebih dulu.
+          Status disusun dari hasil klasifikasi kondisi aktual (porsi
+          pengeluaran pangan &times; inflasi aktual) yang disesuaikan dengan arah proyeksi inflasi tiga bulan ke depan.</p>
+      </div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div id="headlineStat"></div>
+    <div class="info-box" id="hiddenCallout"></div>
+  </section>
+
+  <section id="peta">
+    <div class="section-head"><div class="section-bar"></div>
+      <div><h2>Peta sebaran kerentanan dan urutan prioritas wilayah</h2>
+        <p class="section-desc">Setiap kabupaten/kota diwarnai menurut nilai provinsinya. Sebelum ada provinsi dipilih,
+          panel kanan menampilkan urutan prioritas 38 provinsi. Klik sebuah provinsi di peta atau di daftar untuk
+          melihat detailnya, sementara daftar di bawahnya beralih menjadi kabupaten/kota dalam provinsi tersebut
+          &mdash; urutannya bisa diganti sesuai kebutuhan penelusuran, dengan garis kemiskinan termiskin dulu sebagai
+          urutan awal. Pada mode kategorik, klik kategori untuk memilih kategori yang ditampilkan.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="map-toolbar">
+        <select class="select" id="modeSelect" aria-label="Mode peta"></select>
+        <div class="cat-row" id="mapCats"></div>
+      </div>
+      <div class="filter-note" id="mapFilterNote" hidden></div>
+      <div class="map-grid" style="margin-top:10px;">
+        <div style="min-width:0;">
+          <div id="mapEl"></div>
+          <div class="map-legend-row">
+            <div class="legend" id="mapLegend" style="margin-top:0;"></div>
+            <div class="map-foot-note">Basemap &copy; Esri &middot; batas wilayah: geoBoundaries (BPS/WFP/OCHA)</div>
+          </div>
+        </div>
+        <aside class="side-panel" aria-label="Informasi wilayah">
+          <div class="side-detail" id="sideDetail"></div>
+          <div class="side-list-head">
+            <div class="t" id="sideListTitle">Urutan prioritas wilayah</div>
+            <div class="s" id="sideListSub">Diurutkan: status akhir &rarr; porsi pengeluaran pangan &rarr; inflasi aktual</div>
+            <div class="side-list-sort" id="sideListSort" hidden>
+              <span class="cat-label">Urutkan kab/kota&nbsp;menurut</span>
+              <select class="select small" id="kkSortSelect" aria-label="Urutkan kabupaten/kota menurut"></select>
+            </div>
+          </div>
+          <div class="side-list" id="sideList"></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="kuadran">
+    <div class="section-head"><div class="section-bar"></div>
+      <div><h2>Peta kuadran kerentanan daya beli pangan antarprovinsi</h2>
+        <p class="section-desc">Setiap titik adalah satu provinsi, diposisikan berdasarkan porsi pengeluaran pangan
+          (sumbu-x) dan inflasi pangan aktual 12 observasi terakhir (sumbu-y), relatif terhadap median nasional. Posisi
+          inilah yang menyingkap kelompok Rentan Tersembunyi &mdash; wilayah dengan porsi pengeluaran pangan tinggi
+          meski inflasinya masih rendah, sehingga mudah terlewat bila hanya membaca angka inflasi.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="filter-row" style="margin-bottom:6px;">
+        <span class="cat-label">Warnai menurut</span>
+        <select class="select small" id="scatterColor" aria-label="Warnai titik menurut"></select>
+        <span class="hint">Klik legenda untuk menampilkan/menyembunyikan kategori &middot; klik dua kali untuk hanya satu kategori &middot; klik titik untuk detail provinsi</span>
+      </div>
+      <div id="scatterPlot" class="plot"></div>
+    </div>
+  </section>
+
+  <section id="proyeksi">
+    <div class="section-head"><div class="section-bar"></div>
+      <div><h2>Status berubah setelah arah inflasi tiga bulan dimasukkan</h2>
+        <p class="section-desc">Status awal dibandingkan dengan status akhir setelah arah proyeksi &mdash; membaik,
+          stabil, atau memburuk &mdash; menggeser status maksimum satu tingkat. Perbandingan ini membantu membedakan
+          wilayah yang kondisinya tampak sama hari ini tetapi bergerak ke arah berbeda dalam tiga bulan ke depan.</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Matriks transisi status</div>
+        <div class="card-sub">Arahkan kursor untuk melihat daftar provinsi &middot; klik sel untuk menyaring tabel</div>
+        <div id="heatmapPlot" class="plot"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Uji sensitivitas ambang proyeksi</div>
+        <div class="card-sub">Jumlah provinsi per arah proyeksi pada tiga ambang. Ambang &plusmn;0,50 poin dipakai sebagai batas utama.</div>
+        <div id="sensitivityPlot" class="plot"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">Evaluasi model proyeksi</div>
+      <div class="card-sub">Model terbaik tiap provinsi dipilih dari MAE holdout terkecil di antara Seasonal Naive, ETS, dan SARIMA.</div>
+      <div class="grid-even">
+        <div id="modelCountPlot" class="plot"></div>
+        <div id="modelMaePlot" class="plot"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="wilayah">
+    <div class="section-head"><div class="section-bar"></div>
+      <div><h2>Variasi kondisi antarkabupaten/kota dalam satu provinsi</h2>
+        <p class="section-desc">Status Siaga Pangan dibentuk pada tingkat provinsi, sehingga nilai rata-ratanya dapat
+          menyamarkan variasi lokal yang cukup besar. Pilih provinsi (atau klik provinsi di peta) untuk melihat sebaran
+          garis kemiskinan dan inflasi pangan kabupaten/kota di dalamnya, sebagai langkah penelusuran sebelum
+          menetapkan wilayah prioritas untuk intervensi.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="filter-row">
+        <select class="select" id="provSelect" aria-label="Pilih provinsi"></select>
+        <div class="cat-row" id="kkTipeChips"></div>
+      </div>
+      <div class="grid-even">
+        <div style="min-width:0;">
+          <div class="card-title">Garis kemiskinan kabupaten/kota, 2025</div>
+          <div class="gap-stat" id="povGapStat"></div>
+          <div class="kk-scroll"><div id="povPlot" class="plot"></div></div>
+        </div>
+        <div style="min-width:0;">
+          <div class="card-title">Inflasi pangan kabupaten/kota (kumulatif 12 observasi)</div>
+          <div class="gap-stat" id="inflGapStat"></div>
+          <div class="kk-scroll"><div id="inflPlot" class="plot"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tabel">
+    <div class="section-head"><div class="section-bar"></div>
+      <div><h2>Tabel lengkap 38 provinsi</h2>
+        <p class="section-desc">Rincian angka di balik setiap status, untuk penelusuran lebih lanjut atau lampiran laporan.
+          Buka tabel untuk mencari, mengurutkan, dan menyaring seluruh provinsi &mdash; kolom kategorik punya tombol filter
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></svg>
+          untuk memilih kategori yang ditampilkan. Klik baris untuk melihat provinsi tersebut di peta.</p>
+      </div>
+    </div>
+    <details class="accordion" id="tabelAccordion">
+      <summary>Buka tabel lengkap 38 provinsi
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </summary>
+      <div class="accordion-body">
+        <div class="card">
+          <div class="filter-row">
+            <input class="search" id="searchBox" type="text" placeholder="Cari nama provinsi&hellip;">
+            <div class="cat-row" id="tableCats"></div>
+          </div>
+          <div class="filter-note" id="tableFilterNote" hidden style="margin-bottom:10px;"></div>
+          <div class="table-scroll">
+            <table id="dataTable">
+              <thead><tr>
+                <th data-key="rank" class="num sorted">#<span class="arrow">&#9652;</span></th>
+                <th data-key="provinsi">Provinsi<span class="arrow">&#9662;</span></th>
+                <th data-key="s_i" class="num">Porsi pangan, s&#8321; (%)<span class="arrow">&#9662;</span></th>
+                <th data-key="r_aktual" class="num">Inflasi aktual (%)<span class="arrow">&#9662;</span></th>
+                <th data-key="r_proj_3bulan" class="num">Proyeksi 3 bln (%)<span class="arrow">&#9662;</span></th>
+                <th data-key="arah_proyeksi">Arah<span class="arrow">&#9662;</span><button class="thf" data-field="arah_proyeksi" aria-label="Filter arah proyeksi"></button></th>
+                <th data-key="status">Status awal<span class="arrow">&#9662;</span><button class="thf" data-field="status" aria-label="Filter status awal"></button></th>
+                <th data-key="status_final">Status akhir<span class="arrow">&#9662;</span><button class="thf" data-field="status_final" aria-label="Filter status akhir"></button></th>
+                <th data-key="best_model">Model<span class="arrow">&#9662;</span><button class="thf" data-field="best_model" aria-label="Filter model"></button></th>
+                <th style="cursor:default;">Tindak lanjut</th>
+              </tr></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="count-note" id="countNote"></div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section id="alur">
+    <div class="section-head"><div class="section-bar"></div>
+      <div><h2>Metodologi</h2>
+        <p class="section-desc">Alur analisis dan tindak lanjut Siaga Pangan, dari input data BPS hingga rekomendasi
+          tindak lanjut per status &mdash; disajikan agar hasil dapat ditelusuri dan diverifikasi sebelum digunakan
+          sebagai dasar keputusan.</p>
+      </div>
+    </div>
+    <details class="accordion">
+      <summary>Alur analisis (5 tahap)
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </summary>
+      <div class="accordion-body"><div class="flow" id="flowGrid"></div></div>
+    </details>
+    <details class="accordion">
+      <summary>Tindak lanjut per status
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </summary>
+      <div class="accordion-body"><div class="followup-grid" id="followupGrid"></div></div>
+    </details>
+  </section>
+
+  <footer id="sumber">
+    <div style="font-weight:700; color:var(--text-secondary); margin-bottom:4px;">Keterbatasan &amp; sumber data</div>
+    <p style="margin:0 0 8px;">Siaga Pangan menyusun status pada tingkat provinsi, memakai ukuran relatif antarwilayah,
+      dan bergantung pada proyeksi jangka pendek. Status yang dihasilkan berfungsi sebagai penyaringan awal dan perlu
+      dikonfirmasi dengan kondisi lapangan sebelum digunakan sebagai dasar intervensi.</p>
+    <div>Data: Badan Pusat Statistik (BPS), 2025&ndash;2026. Batas wilayah kabupaten/kota &amp; provinsi: geoBoundaries
+      (sumber BPS, World Food Programme, OCHA ROAP, CC BY 3.0 IGO). Grafik: Plotly.js &middot; Peta: Leaflet.</div>
+  </footer>
+
+</div>
+
+<script id="siaga-data" type="application/json">__SIAGA_DATA__</script>
+<script id="siaga-geo" type="application/json">__SIAGA_GEO__</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.1.0/plotly.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ================= KONSTANTA & KATEGORI =================
+  const FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+  const STATUS_ORDER = ["Tahan","Waspada","Rentan","Kritis"];
+  const STATUS_LEVEL = {Tahan:1, Waspada:2, Rentan:3, Kritis:4};
+  const STATUS_COLOR_VAR = {Tahan:"--status-good", Waspada:"--status-warning", Rentan:"--status-serious", Kritis:"--status-critical"};
+  const STATUS_PILL_CLASS = {Tahan:"pill-tahan", Waspada:"pill-waspada", Rentan:"pill-rentan", Kritis:"pill-kritis"};
+  const DIR_ORDER = ["Membaik","Stabil","Memburuk"];
+  const DIR_COLOR_VAR = {Membaik:"--status-good", Stabil:"--muted", Memburuk:"--status-critical"};
+  const MODEL_ORDER = ["ETS","Seasonal Naive","SARIMA"];
+  const MODEL_COLOR_VAR = {"ETS":"--cat-1", "Seasonal Naive":"--cat-2", "SARIMA":"--cat-3"};
+  const INDONESIA_BOUNDS = [[-11.3,94.5],[6.3,141.3]];
+
+  function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  // Variabel kategorik yang bisa disaring di seluruh dashboard (peta, panel, kuadran, tabel)
+  const CATS = {
+    status_final:  {label:"Status akhir",   values:STATUS_ORDER, color:v => cssVar(STATUS_COLOR_VAR[v])},
+    status:        {label:"Status awal",    values:STATUS_ORDER, color:v => cssVar(STATUS_COLOR_VAR[v])},
+    arah_proyeksi: {label:"Arah proyeksi",  values:DIR_ORDER,    color:v => cssVar(DIR_COLOR_VAR[v])},
+    best_model:    {label:"Model terpilih", values:MODEL_ORDER,  color:v => cssVar(MODEL_COLOR_VAR[v])}
+  };
+  const catFilter = {};
+  Object.keys(CATS).forEach(f => { catFilter[f] = new Set(CATS[f].values); });
+
+  const ICONS = {
+    Tahan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>',
+    Waspada: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none"/></svg>',
+    Rentan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6"/><circle cx="12" cy="16" r="0.6" fill="currentColor" stroke="none"/></svg>',
+    Kritis: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>'
+  };
+  const FUNNEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></svg>';
+
+  // ================= DATA =================
+  const DATA = JSON.parse(document.getElementById("siaga-data").textContent);
+  const GEO = JSON.parse(document.getElementById("siaga-geo").textContent);
+  const provinces = DATA.provinces;
+  const byKey = {};
+  provinces.forEach(p => { byKey[p.provinsi_key] = p; });
+
+  // Urutan prioritas: status akhir (paling parah dulu) -> porsi pangan -> inflasi aktual
+  const priority = provinces.slice().sort((a,b) =>
+    (STATUS_LEVEL[b.status_final] - STATUS_LEVEL[a.status_final]) || (b.s_i - a.s_i) || (b.r_aktual - a.r_aktual));
+  priority.forEach((p,i) => { p.rank = i + 1; });
+
+  function prettyKK(nama){
+    const tc = s => s.toLowerCase().replace(/(^|[\s-])(\S)/g, (m,a,c) => a + c.toUpperCase());
+    if (/^KAB\.?\s+/i.test(nama)) return tc(nama.replace(/^KAB\.?\s+/i, ""));
+    if (/^KOTA\s+/i.test(nama)) return "Kota " + tc(nama.replace(/^KOTA\s+/i, ""));
+    return nama;
+  }
+  Object.keys(DATA.inflation_by_prov).forEach(k => DATA.inflation_by_prov[k].forEach(it => { it.label = prettyKK(it.nama); }));
+  Object.keys(DATA.poverty_by_prov).forEach(k => DATA.poverty_by_prov[k].forEach(it => { it.label = it.nama; }));
+
+  const state = {
+    selected: null,
+    mapMode: "status_final",
+    scatterField: "status",
+    sortKey: "rank", sortDir: "asc",
+    search: "",
+    kkTipe: new Set(["kabupaten","kota"]),
+    kkSort: "gk_asc"
+  };
+
+  // Urutan tampilan kab/kota pada panel peta ketika satu provinsi dipilih
+  const KK_SORT_OPTIONS = [
+    {key:"gk_asc",  label:"Garis kemiskinan \u2013 termiskin dulu (paling parah)"},
+    {key:"gk_desc", label:"Garis kemiskinan \u2013 tertinggi dulu"},
+    {key:"infl_desc", label:"Inflasi pangan \u2013 tertinggi dulu"},
+    {key:"infl_asc",  label:"Inflasi pangan \u2013 terendah dulu"},
+    {key:"name_asc",  label:"Nama kabupaten/kota (A\u2013Z)"}
+  ];
+  function kkNormKey(name){
+    return String(name).toUpperCase()
+      .replace(/^KABUPATEN\s+/, "").replace(/^KAB\.?\s+/, "").replace(/^KOTA\s+/, "")
+      .replace(/[^A-Z0-9]/g, "");
+  }
+  // Gabungkan garis kemiskinan (cakupan penuh) dengan inflasi kab/kota (hanya kota yang dipantau BPS);
+  // "–" berarti kab/kota tsb belum punya titik pemantauan inflasi tersendiri.
+  function getKKList(key){
+    const pov = DATA.poverty_by_prov[key] || [];
+    const infl = DATA.inflation_by_prov[key] || [];
+    const inflIdx = {};
+    infl.forEach(it => { inflIdx[kkNormKey(it.nama)] = it.r; });
+    return pov.map(it => ({
+      nama: it.label || it.nama, tipe: it.tipe, gk: it.gk,
+      r: Object.prototype.hasOwnProperty.call(inflIdx, kkNormKey(it.nama)) ? inflIdx[kkNormKey(it.nama)] : null
+    }));
+  }
+  function sortKKList(list, sortKey){
+    const a = list.slice();
+    if (sortKey === "gk_asc") a.sort((x,y) => x.gk - y.gk);
+    else if (sortKey === "gk_desc") a.sort((x,y) => y.gk - x.gk);
+    else if (sortKey === "name_asc") a.sort((x,y) => x.nama.localeCompare(y.nama));
+    else if (sortKey === "infl_desc" || sortKey === "infl_asc") {
+      const dir = sortKey === "infl_desc" ? -1 : 1;
+      a.sort((x,y) => {
+        if (x.r === null && y.r === null) return x.nama.localeCompare(y.nama);
+        if (x.r === null) return 1;
+        if (y.r === null) return -1;
+        return (x.r - y.r) * dir;
+      });
+    }
+    return a;
+  }
+  function initSideListSort(){
+    const sel = document.getElementById("kkSortSelect");
+    KK_SORT_OPTIONS.forEach(o => {
+      const opt = document.createElement("option");
+      opt.value = o.key; opt.textContent = o.label;
+      sel.appendChild(opt);
+    });
+    sel.value = state.kkSort;
+    sel.addEventListener("change", () => { state.kkSort = sel.value; renderSideList(false); });
+  }
+
+  // ================= UTIL =================
+  function fmt(n, d){ if (n===null||n===undefined||isNaN(n)) return "–"; d = d===undefined?1:d; const s = n.toFixed(d); return (n>0 && d>0) ? "+"+s : s; }
+  function fmtPlain(n, d){ if (n===null||n===undefined||isNaN(n)) return "–"; return n.toFixed(d===undefined?1:d); }
+  function fmtRp(n){ return "Rp " + Math.round(n).toLocaleString("id-ID"); }
+  function escapeHtml(s){ const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+  function median(arr){ const a = arr.slice().sort((x,y)=>x-y), n = a.length; return n%2 ? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2; }
+  function isDark(){
+    const cur = document.documentElement.getAttribute("data-theme");
+    return cur === "dark" || (!cur && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function hexToRgb(hex){
+    hex = hex.replace("#","");
+    if (hex.length === 3) hex = hex.split("").map(c => c+c).join("");
+    const num = parseInt(hex, 16);
+    return [(num>>16)&255, (num>>8)&255, num&255];
+  }
+  function rgbToHex(rgb){ return "#" + rgb.map(v => Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,"0")).join(""); }
+  function lerpColor(a, b, t){ const A = hexToRgb(a), B = hexToRgb(b); return rgbToHex([A[0]+(B[0]-A[0])*t, A[1]+(B[1]-A[1])*t, A[2]+(B[2]-A[2])*t]); }
+  function rgba(hex, alpha){ const c = hexToRgb(hex); return "rgba("+c[0]+","+c[1]+","+c[2]+","+alpha+")"; }
+  function seqRamp(){ return ["--seq-1","--seq-2","--seq-3","--seq-4","--seq-5"].map(cssVar); }
+  function rampColor(ramp, t){
+    t = Math.max(0, Math.min(1, t));
+    const n = ramp.length - 1, seg = t*n, i = Math.min(n-1, Math.floor(seg));
+    return lerpColor(ramp[i], ramp[i+1], seg-i);
+  }
+  function readableOn(hex){
+    const c = hexToRgb(hex).map(v => { v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+    const L = 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2];
+    return L > 0.36 ? "#10120f" : "#ffffff";
+  }
+
+  function pillEl(status){
+    const span = document.createElement("span");
+    span.className = "pill " + (STATUS_PILL_CLASS[status] || "");
+    span.innerHTML = '<span style="display:flex">' + (ICONS[status] || "") + '</span><span>' + escapeHtml(status) + '</span>';
+    return span;
+  }
+  function pillHTML(status){ return pillEl(status).outerHTML; }
+
+  const tooltip = document.getElementById("tooltip");
+  function showTooltip(evt, html){ tooltip.innerHTML = html; tooltip.classList.add("show"); positionTooltip(evt); }
+  function positionTooltip(evt){
+    const pad = 14, tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
+    let left = evt.clientX + pad, top = evt.clientY + pad;
+    if (left + tw > window.innerWidth - 8) left = evt.clientX - tw - pad;
+    if (top + th > window.innerHeight - 8) top = evt.clientY - th - pad;
+    tooltip.style.left = left + "px"; tooltip.style.top = top + "px";
+  }
+  function hideTooltip(){ tooltip.classList.remove("show"); }
+
+  // ================= FILTER KATEGORIK (STATE BERSAMA) =================
+  function passes(p, exceptField){
+    return Object.keys(CATS).every(f => f === exceptField || catFilter[f].has(p[f]));
+  }
+  function fieldActive(f){ return catFilter[f].size !== CATS[f].values.length; }
+  function anyFilterActive(){ return Object.keys(CATS).some(fieldActive); }
+  function toggleCat(field, v){
+    if (catFilter[field].has(v)) catFilter[field].delete(v); else catFilter[field].add(v);
+    onFilterChange();
+  }
+  function isolateCat(field, v){
+    const s = catFilter[field];
+    catFilter[field] = (s.size === 1 && s.has(v)) ? new Set(CATS[field].values) : new Set([v]);
+    onFilterChange();
+  }
+  function resetCat(field){
+    if (field) catFilter[field] = new Set(CATS[field].values);
+    else Object.keys(CATS).forEach(f => { catFilter[f] = new Set(CATS[f].values); });
+    onFilterChange();
+  }
+
+  function renderCatChips(host, field){
+    host.innerHTML = "";
+    const cat = CATS[field];
+    const lab = document.createElement("span");
+    lab.className = "cat-label"; lab.textContent = cat.label + ":";
+    host.appendChild(lab);
+    const all = document.createElement("button");
+    all.type = "button"; all.className = "chip all";
+    all.setAttribute("aria-pressed", String(!fieldActive(field)));
+    all.textContent = "Semua";
+    all.addEventListener("click", () => resetCat(field));
+    host.appendChild(all);
+    cat.values.forEach(v => {
+      const n = provinces.filter(p => p[field] === v).length;
+      const on = catFilter[field].has(v);
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip";
+      b.setAttribute("aria-pressed", String(on));
+      b.title = (on ? "Sembunyikan " : "Tampilkan ") + v;
+      const color = cat.color(v);
+      b.innerHTML = '<span class="cdot" style="background:' + color + '; border-color:' + color + '"></span>'
+        + '<span class="clabel">' + escapeHtml(v) + '</span><span class="ccount">' + n + '</span>';
+      b.addEventListener("click", () => toggleCat(field, v));
+      host.appendChild(b);
+    });
+  }
+
+  function renderFilterNote(host, exceptField){
+    const active = Object.keys(CATS).filter(f => f !== exceptField && fieldActive(f));
+    if (!active.length){ host.hidden = true; host.innerHTML = ""; return; }
+    host.hidden = false;
+    host.innerHTML = '<span>Filter aktif: ' + active.map(f =>
+      '<b>' + CATS[f].label + '</b> (' + Array.from(catFilter[f]).map(escapeHtml).join(", ") + ')').join(" &middot; ") + '</span>';
+    const btn = document.createElement("button");
+    btn.className = "linkbtn"; btn.textContent = "Reset semua filter";
+    btn.addEventListener("click", () => resetCat());
+    host.appendChild(btn);
+  }
+
+  function onFilterChange(){
+    restyleMap();
+    renderMapToolbar();
+    renderSideList(false);
+    renderTableControls();
+    renderTableBody();
+    renderScatter();
+    refreshPopover();
+  }
+
+  // ================= TEMA =================
+  function updateThemeIcon(){
+    document.getElementById("themeIcon").innerHTML = isDark()
+      ? '<path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/>'
+      : '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+  }
+  function initTheme(){
+    let saved = null;
+    try { saved = localStorage.getItem("siaga-theme"); } catch(e){}
+    if (saved) document.documentElement.setAttribute("data-theme", saved);
+    updateThemeIcon();
+    document.getElementById("themeBtn").addEventListener("click", () => {
+      const next = isDark() ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      try { localStorage.setItem("siaga-theme", next); } catch(e){}
+      applyTheme();
+    });
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
+  }
+  function applyTheme(){
+    updateThemeIcon();
+    setTiles();
+    restyleMap();
+    renderMapToolbar();
+    renderAllPlots();
+  }
+
+  // ================= SCROLLSPY =================
+  function initScrollspy(){
+    const links = Array.from(document.querySelectorAll("#pillnav a"));
+    const targets = links.map(l => document.getElementById(l.getAttribute("data-target"))).filter(Boolean);
+    if (!("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting){
+          links.forEach(l => l.classList.toggle("active", l.getAttribute("data-target") === entry.target.id));
+        }
+      });
+    }, {rootMargin:"0px 0px -70% 0px", threshold:0});
+    targets.forEach(t => io.observe(t));
+  }
+
+  // ================= RINGKASAN =================
+  function renderTiles(){
+    const counts = {Tahan:0,Waspada:0,Rentan:0,Kritis:0}, before = {Tahan:0,Waspada:0,Rentan:0,Kritis:0};
+    provinces.forEach(p => { counts[p.status_final]++; before[p.status]++; });
+    const host = document.getElementById("tiles");
+    host.innerHTML = "";
+    STATUS_ORDER.forEach(s => {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.style.setProperty("--tile-accent", "var(" + STATUS_COLOR_VAR[s] + ")");
+      tile.innerHTML = '<div class="tile-label"><span class="sdot"></span><span>' + s + '</span></div>'
+        + '<div class="tile-value">' + counts[s] + '</div>'
+        + '<div class="tile-sub">provinsi · sebelum proyeksi: ' + before[s] + '</div>';
+      host.appendChild(tile);
+    });
+  }
+
+  function renderHeadline(){
+    const changed = provinces.filter(p => p.status !== p.status_final).length, total = provinces.length;
+    document.getElementById("headlineStat").innerHTML =
+      '<div class="headline-stat"><div class="num">' + changed + ' / ' + total + '</div>'
+      + '<div class="txt"><b style="color:var(--text-primary);">' + Math.round(changed/total*100) + '% provinsi berubah status</b> setelah arah proyeksi inflasi tiga bulan ditambahkan ke kondisi aktual.</div></div>';
+  }
+
+  function renderHiddenCallout(){
+    const hidden = provinces.filter(p => p.kuadran === "Rentan Tersembunyi");
+    const host = document.getElementById("hiddenCallout");
+    host.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>';
+    const text = document.createElement("div");
+    text.className = "ibtext";
+    text.innerHTML = '<b>Kerentanan tersembunyi:</b> ' + hidden.length + ' provinsi punya porsi pengeluaran pangan di atas median nasional, meski inflasi pangannya masih di bawah median.';
+    const list = document.createElement("div");
+    list.className = "cprov";
+    hidden.forEach(p => {
+      const b = document.createElement("button");
+      b.className = "linkchip"; b.textContent = p.provinsi;
+      b.title = "Lihat " + p.provinsi + " di peta";
+      b.addEventListener("click", () => selectProvince(p.provinsi_key, {scroll:"peta"}));
+      list.appendChild(b);
+    });
+    text.appendChild(list);
+    host.appendChild(text);
+  }
+
+  // ================= PETA =================
+  const MODES = [
+    {key:"status_final",  label:"Status akhir (setelah proyeksi)", type:"category",   field:"status_final"},
+    {key:"status",        label:"Status awal (kondisi aktual)",    type:"category",   field:"status"},
+    {key:"arah_proyeksi", label:"Arah proyeksi 3 bulan",           type:"category",   field:"arah_proyeksi"},
+    {key:"best_model",    label:"Model proyeksi terpilih",         type:"category",   field:"best_model"},
+    {key:"s_i",           label:"Porsi pengeluaran pangan, s₁ (%)", type:"sequential", field:"s_i"},
+    {key:"r_aktual",      label:"Inflasi pangan aktual (%)",       type:"diverging",  field:"r_aktual"},
+    {key:"r_proj_3bulan", label:"Proyeksi inflasi 3 bulan (%)",    type:"diverging",  field:"r_proj_3bulan"},
+    {key:"persen_miskin", label:"Persentase penduduk miskin (%)",  type:"sequential", field:"persen_miskin"}
+  ];
+  MODES.forEach(m => {
+    const vals = provinces.map(p => p[m.field]);
+    if (m.type === "sequential") m.domain = {min:Math.min(...vals), max:Math.max(...vals)};
+    if (m.type === "diverging") m.domain = {absMax:Math.max(...vals.map(Math.abs)) || 1};
+  });
+  function currentMode(){ return MODES.find(m => m.key === state.mapMode); }
+
+  function colorForMode(mode, p){
+    if (mode.type === "category") return CATS[mode.field].color(p[mode.field]);
+    const v = p[mode.field];
+    if (mode.type === "sequential") return rampColor(seqRamp(), (v - mode.domain.min) / ((mode.domain.max - mode.domain.min) || 1));
+    const mid = cssVar("--div-mid");
+    return v >= 0 ? lerpColor(mid, cssVar("--div-pos"), Math.min(1, v/mode.domain.absMax))
+                  : lerpColor(mid, cssVar("--div-neg"), Math.min(1, -v/mode.domain.absMax));
+  }
+
+  let map, geoLayer, tileLayers = [];
+  const provLayers = {};
+
+  function setTiles(){
+    if (!map) return;
+    tileLayers.forEach(l => map.removeLayer(l));
+    const folder = isDark() ? "World_Dark_Gray" : "World_Light_Gray";
+    const base = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/" + folder;
+    tileLayers = [
+      L.tileLayer(base + "_Base/MapServer/tile/{z}/{y}/{x}", {maxZoom:12, minZoom:4}).addTo(map),
+      L.tileLayer(base + "_Reference/MapServer/tile/{z}/{y}/{x}", {maxZoom:12, minZoom:4, pane:"labelsPane"}).addTo(map)
+    ];
+  }
+
+  function styleFn(feature){
+    const key = feature.properties.provinsi_key, p = byKey[key];
+    const sel = state.selected === key;
+    if (!p) return {fillColor:cssVar("--grid"), fillOpacity:0.5, color:cssVar("--surface-1"), weight:0.5};
+    const ok = passes(p);
+    return {
+      fillColor: ok ? colorForMode(currentMode(), p) : cssVar("--grid"),
+      fillOpacity: ok ? (state.selected && !sel ? 0.62 : 0.86) : 0.3,
+      color: sel ? cssVar("--text-primary") : cssVar("--surface-1"),
+      weight: sel ? 1.5 : 0.6,
+      opacity: 1
+    };
+  }
+
+  function restyleMap(){
+    if (!geoLayer) return;
+    geoLayer.setStyle(styleFn);
+    if (state.selected && provLayers[state.selected]) provLayers[state.selected].forEach(l => l.bringToFront());
+  }
+
+  function findKK(list, name){
+    if (!list) return null;
+    const target = name.toLowerCase();
+    return list.find(it => it.label.toLowerCase() === target) || null;
+  }
+
+  function mapValueLabel(mode, p){
+    if (mode.type === "sequential") return fmtPlain(p[mode.field], 2) + "%";
+    if (mode.type === "diverging") return fmt(p[mode.field], 2) + "%";
+    return escapeHtml(String(p[mode.field]));
+  }
+
+  function tooltipForFeature(feature){
+    const name = feature.properties.nama, key = feature.properties.provinsi_key, p = byKey[key];
+    let html = '<div class="tt-title">' + escapeHtml(name) + '</div>';
+    if (!p) return html + '<div class="tt-row"><span class="tt-key">Data</span><span class="tt-val">tidak tersedia</span></div>';
+    html += '<div class="tt-row"><span class="tt-key">Provinsi</span><span class="tt-val">' + escapeHtml(p.provinsi) + '</span></div>';
+    const pov = findKK(DATA.poverty_by_prov[key], name), infl = findKK(DATA.inflation_by_prov[key], name);
+    if (pov) html += '<div class="tt-row"><span class="tt-key">Garis kemiskinan</span><span class="tt-val">' + fmtRp(pov.gk) + '</span></div>';
+    if (infl) html += '<div class="tt-row"><span class="tt-key">Inflasi pangan kab/kota</span><span class="tt-val">' + fmt(infl.r,2) + '%</span></div>';
+    html += '<div class="tt-div"></div>';
+    const mode = currentMode();
+    html += '<div class="tt-row"><span class="tt-key">' + escapeHtml(mode.label) + '</span><span class="tt-val">' + mapValueLabel(mode, p) + '</span></div>';
+    html += '<div class="tt-row"><span class="tt-key">Prioritas</span><span class="tt-val">#' + p.rank + ' dari ' + provinces.length + '</span></div>';
+    if (!passes(p)) html += '<div class="tt-row"><span class="tt-key">Tersaring oleh filter</span></div>';
+    return html;
+  }
+
+  function initMap(){
+    const select = document.getElementById("modeSelect");
+    MODES.forEach(m => {
+      const opt = document.createElement("option");
+      opt.value = m.key; opt.textContent = m.label;
+      select.appendChild(opt);
+    });
+    select.value = state.mapMode;
+    select.addEventListener("change", () => { state.mapMode = select.value; restyleMap(); renderMapToolbar(); });
+
+    if (typeof L === "undefined"){
+      document.getElementById("mapEl").innerHTML = '<div class="kk-empty" style="padding:24px;">Peta memerlukan koneksi internet untuk memuat Leaflet.</div>';
+      return;
+    }
+    map = L.map("mapEl", {scrollWheelZoom:true, zoomControl:true, attributionControl:false, zoomSnap:0.25, zoomDelta:0.5}).fitBounds(INDONESIA_BOUNDS);
+    map.createPane("labelsPane");
+    map.getPane("labelsPane").style.zIndex = 450;
+    map.getPane("labelsPane").style.pointerEvents = "none";
+    setTiles();
+
+    geoLayer = L.geoJSON(GEO, {
+      style: styleFn,
+      onEachFeature: (feature, layer) => {
+        const key = feature.properties.provinsi_key;
+        (provLayers[key] = provLayers[key] || []).push(layer);
+        layer.on("mouseover", e => {
+          layer.setStyle({weight:2.2, color:cssVar("--text-primary")});
+          layer.bringToFront();
+          showTooltip(e.originalEvent, tooltipForFeature(feature));
+        });
+        layer.on("mousemove", e => positionTooltip(e.originalEvent));
+        layer.on("mouseout", () => {
+          geoLayer.resetStyle(layer);
+          if (state.selected === key) provLayers[key].forEach(l => l.bringToFront());
+          hideTooltip();
+        });
+        layer.on("click", () => { if (byKey[key]) selectProvince(key); });
+      }
+    }).addTo(map);
+  }
+
+  function renderMapToolbar(){
+    const mode = currentMode();
+    const cats = document.getElementById("mapCats"), legend = document.getElementById("mapLegend");
+    legend.innerHTML = "";
+    if (mode.type === "category"){
+      renderCatChips(cats, mode.field);
+      legend.innerHTML = '<span class="hint">Klik kategori di atas peta untuk menampilkan/menyembunyikan; wilayah tersaring berwarna abu-abu.</span>';
+    } else {
+      cats.innerHTML = "";
+      const grad = mode.type === "sequential"
+        ? "linear-gradient(90deg," + seqRamp().join(",") + ")"
+        : "linear-gradient(90deg," + cssVar("--div-neg") + "," + cssVar("--div-mid") + "," + cssVar("--div-pos") + ")";
+      const lo = mode.type === "sequential" ? fmtPlain(mode.domain.min,1) : fmtPlain(-mode.domain.absMax,1);
+      const hi = mode.type === "sequential" ? fmtPlain(mode.domain.max,1) : fmtPlain(mode.domain.absMax,1);
+      legend.innerHTML = '<span class="legend-item"><span>' + lo + '</span><span class="grad-bar" style="background:' + grad + '"></span><span>' + hi + '</span></span>';
+    }
+    renderFilterNote(document.getElementById("mapFilterNote"), mode.type === "category" ? mode.field : null);
+  }
+
+  // ================= PANEL KANAN: DETAIL + URUTAN PRIORITAS =================
+  function renderSideDetail(){
+    const host = document.getElementById("sideDetail");
+    const p = state.selected ? byKey[state.selected] : null;
+    if (!p){
+      host.innerHTML = '<div class="sd-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>'
+        + '<div><b style="color:var(--text-primary)">Klik provinsi di peta</b> atau di daftar di bawah untuk menampilkan informasi wilayah dan posisinya dalam urutan prioritas.</div></div>';
+      return;
+    }
+    const pov = DATA.poverty_by_prov[p.provinsi_key] || [], infl = DATA.inflation_by_prov[p.provinsi_key] || [];
+    const gks = pov.map(i => i.gk), rs = infl.map(i => i.r);
+    const kkLine = pov.length
+      ? pov.length + ' kab/kota · garis kemiskinan ' + Math.round(Math.min(...gks)/1000) + '–' + Math.round(Math.max(...gks)/1000) + ' rb'
+        + (rs.length ? ' · inflasi ' + fmt(Math.min(...rs),1) + ' s.d. ' + fmt(Math.max(...rs),1) + '%' : '')
+      : '';
+    host.innerHTML =
+      '<div class="sd-top"><div><div class="sd-rank">Prioritas #' + p.rank + ' dari ' + provinces.length + (passes(p) ? '' : ' · tersaring') + '</div>'
+      + '<div class="sd-name">' + escapeHtml(p.provinsi) + '</div></div>'
+      + '<button class="xbtn" id="sdClose" aria-label="Tutup detail" title="Tutup">&times;</button></div>'
+      + '<div class="sd-status">' + pillHTML(p.status) + '<span>&rarr;</span>' + pillHTML(p.status_final)
+      + '<span>&middot; Arah <b style="color:var(--text-primary)">' + escapeHtml(p.arah_proyeksi) + '</b></span></div>'
+      + '<div class="sd-metrics">'
+      + '<div class="sd-m" title="Porsi pengeluaran pangan terhadap total pengeluaran">Porsi pangan s₁<b>' + fmtPlain(p.s_i,1) + '%</b></div>'
+      + '<div class="sd-m" title="Inflasi pangan kumulatif 12 observasi terakhir">Inflasi aktual<b>' + fmt(p.r_aktual,2) + '%</b></div>'
+      + '<div class="sd-m" title="Proyeksi inflasi 3 bulan dengan model ' + escapeHtml(p.best_model) + '">Proyeksi 3 bln<b>' + fmt(p.r_proj_3bulan,2) + '%</b></div>'
+      + '<div class="sd-m" title="Selisih proyeksi terhadap inflasi 3 bulan terakhir">Δ vs 3 bln lalu<b>' + fmt(p.delta_forecast,2) + '</b></div>'
+      + '<div class="sd-m">Penduduk miskin<b>' + fmtPlain(p.persen_miskin,2) + '%</b></div>'
+      + '<div class="sd-m" title="Garis kemiskinan makanan (Rp/kapita/bulan)">GK makanan<b>' + fmtRp(p.GKM) + '</b></div>'
+      + '</div>'
+      + '<div class="sd-rec"><b>Tindak lanjut:</b> ' + escapeHtml(p.rekomendasi) + ' <span style="color:var(--muted)">· kuadran ' + escapeHtml(p.kuadran) + ' · model ' + escapeHtml(p.best_model) + '</span></div>'
+      + '<div class="sd-foot"><span class="hint">' + kkLine + '</span><a class="linkbtn" href="#wilayah">Variasi kab/kota &rarr;</a></div>';
+    document.getElementById("sdClose").addEventListener("click", clearSelection);
+  }
+
+  function renderSideList(scrollToSel){
+    const host = document.getElementById("sideList");
+    const sortBox = document.getElementById("sideListSort");
+    const titleEl = document.getElementById("sideListTitle");
+    const subEl = document.getElementById("sideListSub");
+
+    if (!state.selected){
+      // Belum ada provinsi terpilih: tampilkan urutan prioritas 38 provinsi seperti semula
+      sortBox.hidden = true;
+      const rows = priority.filter(p => passes(p));
+      titleEl.textContent = "Urutan prioritas wilayah · " + rows.length + " dari " + provinces.length + " provinsi";
+      subEl.textContent = "Diurutkan: status akhir → porsi pengeluaran pangan → inflasi aktual";
+      host.innerHTML = "";
+      if (!rows.length){
+        host.innerHTML = '<div class="side-empty">Tidak ada provinsi yang cocok dengan filter kategori.</div>';
+        return;
+      }
+      rows.forEach(p => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "prow" + (p.provinsi_key === state.selected ? " sel" : "");
+        b.innerHTML = '<span class="rk">' + p.rank + '</span>'
+          + '<span style="min-width:0"><div class="nm">' + escapeHtml(p.provinsi) + '</div>'
+          + '<div class="mt">s₁ ' + fmtPlain(p.s_i,1) + '% · inflasi ' + fmt(p.r_aktual,2) + '% · ' + escapeHtml(p.arah_proyeksi) + '</div></span>'
+          + pillHTML(p.status_final);
+        b.addEventListener("click", () => selectProvince(p.provinsi_key));
+        host.appendChild(b);
+      });
+      if (scrollToSel){
+        const sel = host.querySelector(".prow.sel");
+        if (sel) host.scrollTo({top: Math.max(0, sel.offsetTop - host.clientHeight/2 + sel.offsetHeight/2), behavior:"smooth"});
+      }
+      return;
+    }
+
+    // Provinsi terpilih: tabel beralih ke kabupaten/kota di dalamnya
+    const p = byKey[state.selected];
+    const kk = sortKKList(getKKList(state.selected), state.kkSort);
+    sortBox.hidden = false;
+    document.getElementById("kkSortSelect").value = state.kkSort;
+    titleEl.textContent = "Kabupaten/kota di " + (p ? p.provinsi : state.selected) + " · " + kk.length + " wilayah";
+    subEl.textContent = KK_SORT_OPTIONS.find(o => o.key === state.kkSort).label.replace(" (paling parah)", "");
+    host.innerHTML = "";
+    if (!kk.length){
+      host.innerHTML = '<div class="side-empty">Data kabupaten/kota tidak tersedia untuk provinsi ini.</div>';
+      return;
+    }
+    kk.forEach((it, i) => {
+      const row = document.createElement("div");
+      row.className = "prow static";
+      row.innerHTML = '<span class="rk">' + (i+1) + '</span>'
+        + '<span style="min-width:0"><div class="nm">' + escapeHtml(it.nama) + '</div>'
+        + '<div class="mt">GK ' + fmtRp(it.gk) + (it.r !== null ? ' · inflasi ' + fmt(it.r,2) + '%' : ' · inflasi belum terpantau') + '</div></span>'
+        + '<span class="kk-tag">' + (it.tipe === "kota" ? "Kota" : "Kab") + '</span>';
+      host.appendChild(row);
+    });
+  }
+
+  function selectProvince(key, opts){
+    opts = opts || {};
+    state.selected = key;
+    restyleMap();
+    if (map && provLayers[key]){
+      map.flyToBounds(L.featureGroup(provLayers[key]).getBounds(), {padding:[30,30], maxZoom:8, duration:0.6});
+    }
+    renderSideDetail();
+    renderSideList(true);
+    renderTableBody();
+    renderScatter();
+    const ps = document.getElementById("provSelect");
+    if (ps.value !== key){ ps.value = key; renderKK(); }
+    if (opts.scroll) document.getElementById(opts.scroll).scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  function clearSelection(){
+    state.selected = null;
+    restyleMap();
+    if (map) map.flyToBounds(INDONESIA_BOUNDS, {duration:0.6});
+    renderSideDetail();
+    renderSideList(false);
+    renderTableBody();
+    renderScatter();
+  }
+
+  // ================= PLOTLY: DASAR =================
+  const PCONFIG = {
+    displaylogo:false, responsive:true,
+    modeBarButtonsToRemove:["lasso2d","select2d","autoScale2d","toggleSpikelines","hoverClosestCartesian","hoverCompareCartesian"],
+    toImageButtonOptions:{format:"png", scale:2}
+  };
+  function theme(){
+    return {text:cssVar("--text-primary"), sec:cssVar("--text-secondary"), muted:cssVar("--muted"), grid:cssVar("--grid"),
+            base:cssVar("--baseline"), surface:cssVar("--surface-1"), page:cssVar("--page")};
+  }
+  function baseLayout(extra){
+    const t = theme();
+    return Object.assign({
+      paper_bgcolor:"rgba(0,0,0,0)", plot_bgcolor:"rgba(0,0,0,0)",
+      font:{family:FONT, size:12, color:t.sec},
+      margin:{t:16, r:16, b:48, l:56},
+      hoverlabel:{bgcolor:t.text, bordercolor:t.text, font:{family:FONT, size:12, color:t.page}, align:"left"},
+      modebar:{bgcolor:"rgba(0,0,0,0)", color:t.muted, activecolor:t.text},
+      showlegend:false
+    }, extra);
+  }
+  function axis(title, extra){
+    const t = theme();
+    return Object.assign({
+      title:{text:title || "", font:{size:11.5, color:t.muted}},
+      gridcolor:t.grid, linecolor:t.base, zerolinecolor:t.base, showline:true,
+      tickfont:{size:11, color:t.muted}, automargin:true
+    }, extra);
+  }
+  function legendLayout(){
+    return {orientation:"h", x:0, y:-0.16, xanchor:"left", yanchor:"top", font:{size:12, color:theme().sec},
+            itemclick:"toggle", itemdoubleclick:"toggleothers", bgcolor:"rgba(0,0,0,0)"};
+  }
+
+  // ================= KUADRAN (SCATTER) =================
+  const SCATTER_FIELDS = [["status","Status awal (kuadran)"],["status_final","Status akhir"],["arah_proyeksi","Arah proyeksi"],["best_model","Model terpilih"]];
+  const SCATTER_LABELS = ["DKI Jakarta","Papua Pegunungan","Nusa Tenggara Timur","Nusa Tenggara Barat","Aceh","Papua Tengah"];
+
+  function initScatterControls(){
+    const sel = document.getElementById("scatterColor");
+    SCATTER_FIELDS.forEach(f => { const o = document.createElement("option"); o.value = f[0]; o.textContent = f[1]; sel.appendChild(o); });
+    sel.value = state.scatterField;
+    sel.addEventListener("change", () => { state.scatterField = sel.value; renderScatter(); });
+
+    const gd = document.getElementById("scatterPlot");
+    let clickTimer = null;
+    renderScatter();
+    gd.on("plotly_legendclick", ev => {
+      const v = ev.data[ev.curveNumber].meta;
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => toggleCat(state.scatterField, v), 260);
+      return false;
+    });
+    gd.on("plotly_legenddoubleclick", ev => {
+      clearTimeout(clickTimer);
+      isolateCat(state.scatterField, ev.data[ev.curveNumber].meta);
+      return false;
+    });
+    gd.on("plotly_click", ev => {
+      const pt = ev.points && ev.points[0];
+      if (pt && pt.customdata) selectProvince(pt.customdata[5], {scroll:"peta"});
+    });
+  }
+
+  function renderScatter(){
+    const gd = document.getElementById("scatterPlot");
+    if (typeof Plotly === "undefined") return;
+    const t = theme(), field = state.scatterField, cat = CATS[field];
+    const medS = median(provinces.map(p => p.s_i)), medR = median(provinces.map(p => p.r_aktual));
+    const traces = cat.values.map(v => {
+      const pts = provinces.filter(p => p[field] === v && passes(p, field));
+      const total = provinces.filter(p => p[field] === v).length;
+      return {
+        type:"scatter", mode:"markers", name: v + " (" + total + ")", meta: v,
+        x: pts.map(p => p.s_i), y: pts.map(p => p.r_aktual),
+        customdata: pts.map(p => [p.provinsi, p.kuadran, p.status, p.status_final, p.arah_proyeksi, p.provinsi_key, p.rank, p.best_model]),
+        marker:{
+          color: cat.color(v),
+          size: pts.map(p => p.provinsi_key === state.selected ? 17 : 11),
+          line:{color: pts.map(p => p.provinsi_key === state.selected ? t.text : t.surface),
+                width: pts.map(p => p.provinsi_key === state.selected ? 2.5 : 1.5)}
+        },
+        visible: catFilter[field].has(v) ? true : "legendonly",
+        hovertemplate: "<b>%{customdata[0]}</b><br>Porsi pangan: %{x:.1f}%<br>Inflasi aktual: %{y:+.2f}%"
+          + "<br>Kuadran: %{customdata[1]}<br>Status: %{customdata[2]} → %{customdata[3]}"
+          + "<br>Arah: %{customdata[4]} · Model: %{customdata[7]}<br>Prioritas #%{customdata[6]}<extra></extra>"
+      };
+    });
+
+    const sVals = provinces.map(p => p.s_i), rVals = provinces.map(p => p.r_aktual);
+    const xr = [Math.min(...sVals) - 2.5, Math.max(...sVals) + 2.5], yr = [Math.min(...rVals) - 1.2, Math.max(...rVals) + 1.4];
+    const annotations = [];
+    provinces.forEach(p => {
+      const isSel = p.provinsi_key === state.selected;
+      if (!passes(p) || !(isSel || SCATTER_LABELS.includes(p.provinsi))) return;
+      const nearRight = p.s_i > xr[1] - (xr[1] - xr[0]) * 0.22;
+      annotations.push({x:p.s_i, y:p.r_aktual, text: isSel ? "<b>" + escapeHtml(p.provinsi) + "</b>" : escapeHtml(p.provinsi),
+        showarrow:false, xanchor: nearRight ? "right" : "left", yanchor:"bottom", xshift: nearRight ? -7 : 7, yshift:5,
+        font:{size: isSel ? 12.5 : 11, color: isSel ? t.text : t.sec}});
+    });
+    const corner = (x, y, text, xa, ya) => ({xref:"paper", yref:"paper", x, y, xanchor:xa, yanchor:ya, text, showarrow:false, font:{size:11, color:t.muted}});
+    annotations.push(
+      corner(1, 1, "Tekanan akut ↗", "right", "top"),
+      corner(1, 0, "Rentan tersembunyi ↘", "right", "bottom"),
+      corner(0, 1, "↖ Harga tertekan, kapasitas kuat", "left", "top"),
+      corner(0, 0, "↙ Relatif tahan", "left", "bottom"),
+      {x:medS, yref:"paper", y:1, text:"median s₁ = " + medS.toFixed(1), showarrow:false, xanchor:"left", xshift:5, yanchor:"top", yshift:-18, font:{size:10.5, color:t.muted}},
+      {xref:"paper", x:0, y:medR, text:"median inflasi = " + medR.toFixed(2), showarrow:false, xanchor:"left", xshift:6, yanchor:"bottom", font:{size:10.5, color:t.muted}}
+    );
+
+    const dash = {color:t.muted, width:1, dash:"dash"};
+    const layout = baseLayout({
+      height: 520, showlegend:true, legend:legendLayout(), margin:{t:14, r:20, b:40, l:60},
+      xaxis: axis("Porsi pengeluaran pangan, s₁ (%)", {zeroline:false, range:xr}),
+      yaxis: axis("Inflasi pangan aktual, 12 observasi (%)", {zeroline:false, range:yr}),
+      shapes:[
+        {type:"line", xref:"x", yref:"paper", x0:medS, x1:medS, y0:0, y1:1, line:dash, layer:"below"},
+        {type:"line", xref:"paper", yref:"y", x0:0, x1:1, y0:medR, y1:medR, line:dash, layer:"below"}
+      ],
+      annotations, hovermode:"closest", uirevision:"scatter"
+    });
+    Plotly.react(gd, traces, layout, PCONFIG);
+  }
+
+  // ================= MATRIKS TRANSISI (HEATMAP) =================
+  function renderHeatmap(){
+    const gd = document.getElementById("heatmapPlot");
+    const t = theme();
+    const names = {};
+    STATUS_ORDER.forEach(a => { names[a] = {}; STATUS_ORDER.forEach(b => { names[a][b] = []; }); });
+    provinces.forEach(p => names[p.status][p.status_final].push(p.provinsi));
+    const z = STATUS_ORDER.map(a => STATUS_ORDER.map(b => names[a][b].length));
+    const custom = STATUS_ORDER.map(a => STATUS_ORDER.map(b => names[a][b].length ? names[a][b].join("<br>") : "—"));
+    const zmax = Math.max(...z.flat());
+    const ramp = seqRamp();
+    const colorscale = ramp.map((c, i) => [i/(ramp.length-1), c]);
+    const annotations = [];
+    STATUS_ORDER.forEach((a, ri) => STATUS_ORDER.forEach((b, ci) => {
+      const n = z[ri][ci];
+      annotations.push({x:b, y:a, text:"<b>" + n + "</b>", showarrow:false,
+        font:{size:14, color: readableOn(rampColor(ramp, n/zmax))}});
+    }));
+    const trace = {
+      type:"heatmap", x:STATUS_ORDER, y:STATUS_ORDER, z, customdata:custom,
+      colorscale, zmin:0, zmax, showscale:false, xgap:4, ygap:4,
+      hovertemplate:"<b>%{y} → %{x}</b><br>%{z} provinsi<br><br>%{customdata}<extra></extra>"
+    };
+    const layout = baseLayout({
+      height: 400, margin:{t:40, r:10, b:14, l:70},
+      xaxis: axis("", {side:"top", showline:false, showgrid:false, ticks:"", fixedrange:true, tickfont:{size:12, color:t.sec},
+        title:{text:"Status setelah proyeksi →", standoff:8, font:{size:11.5, color:t.muted}}}),
+      yaxis: axis("", {autorange:"reversed", showline:false, showgrid:false, ticks:"", fixedrange:true, tickfont:{size:12, color:t.sec},
+        ticksuffix:"  ", title:{text:"Status awal", standoff:14, font:{size:11.5, color:t.muted}}}),
+      annotations
+    });
+    Plotly.react(gd, [trace], layout, Object.assign({}, PCONFIG, {displayModeBar:false}));
+    if (!gd._siagaBound){
+      gd._siagaBound = true;
+      gd.on("plotly_click", ev => {
+        const pt = ev.points && ev.points[0];
+        if (!pt) return;
+        catFilter.status = new Set([pt.y]);
+        catFilter.status_final = new Set([pt.x]);
+        onFilterChange();
+        document.getElementById("tabel").scrollIntoView({behavior:"smooth", block:"start"});
+      });
+    }
+  }
+
+  // ================= SENSITIVITAS =================
+  function renderSensitivity(){
+    const gd = document.getElementById("sensitivityPlot");
+    const t = theme(), rows = DATA.sensitivity;
+    const x = rows.map(r => "±" + r.threshold.toFixed(2) + (r.threshold === 0.5 ? " (utama)" : ""));
+    const traces = DIR_ORDER.map(d => ({
+      type:"bar", name:d, x, y: rows.map(r => r[d]),
+      marker:{color: cssVar(DIR_COLOR_VAR[d]), line:{color:t.surface, width:1}},
+      text: rows.map(r => r[d]), textposition:"outside", cliponaxis:false,
+      textfont:{size:11, color:t.sec},
+      customdata: rows.map(r => [r.status_berubah, r.status_tetap]),
+      hovertemplate:"<b>Ambang %{x}</b><br>" + d + ": %{y} provinsi<br>Status berubah: %{customdata[0]} · tetap: %{customdata[1]}<extra></extra>"
+    }));
+    const layout = baseLayout({
+      height: 340, showlegend:true, legend:legendLayout(), barmode:"group", bargap:0.28, bargroupgap:0.08, barcornerradius:4,
+      margin:{t:22, r:10, b:40, l:44},
+      xaxis: axis("", {showgrid:false, fixedrange:true}),
+      yaxis: axis("Jumlah provinsi", {fixedrange:true, rangemode:"tozero"})
+    });
+    Plotly.react(gd, traces, layout, Object.assign({}, PCONFIG, {displayModeBar:false}));
+  }
+
+  // ================= EVALUASI MODEL =================
+  function renderModelEval(){
+    const t = theme();
+    const counts = MODEL_ORDER.map(m => provinces.filter(p => p.best_model === m).length);
+    Plotly.react(document.getElementById("modelCountPlot"), [{
+      type:"bar", x:MODEL_ORDER, y:counts,
+      marker:{color: MODEL_ORDER.map(m => cssVar(MODEL_COLOR_VAR[m]))},
+      text:counts, textposition:"outside", cliponaxis:false, textfont:{size:12, color:t.sec},
+      hovertemplate:"<b>%{x}</b><br>Terpilih di %{y} provinsi<extra></extra>"
+    }], baseLayout({
+      height: 330, barcornerradius:4, bargap:0.45, margin:{t:34, r:10, b:40, l:48},
+      title:{text:"Jumlah provinsi per model terpilih", font:{size:12.5, color:t.text}, x:0, xanchor:"left", y:0.98},
+      xaxis: axis("", {showgrid:false, fixedrange:true}),
+      yaxis: axis("Jumlah provinsi", {fixedrange:true, rangemode:"tozero"})
+    }), Object.assign({}, PCONFIG, {displayModeBar:false}));
+
+    const val = DATA.validation || [];
+    const fieldOf = {"ETS":"MAE_ets", "Seasonal Naive":"MAE_naive", "SARIMA":"MAE_sarima"};
+    const gd = document.getElementById("modelMaePlot");
+    const traces = MODEL_ORDER.map(m => {
+      const c = cssVar(MODEL_COLOR_VAR[m]);
+      return {
+        type:"box", name:m, y: val.map(v => v[fieldOf[m]]),
+        customdata: val.map(v => [byKey[v.provinsi_key] ? byKey[v.provinsi_key].provinsi : v.provinsi_key, v.best_model, v.provinsi_key]),
+        boxpoints:"all", jitter:0.45, pointpos:0, hoveron:"points",
+        marker:{color:c, size:7, opacity:0.8, line:{color:t.surface, width:1}},
+        line:{color:c, width:1.5}, fillcolor:rgba(c, 0.12),
+        hovertemplate:"<b>%{customdata[0]}</b><br>MAE " + m + ": %{y:.3f}<br>Model terpilih: %{customdata[1]}<extra></extra>"
+      };
+    });
+    Plotly.react(gd, traces, baseLayout({
+      height: 330, margin:{t:34, r:10, b:40, l:52},
+      title:{text:"Sebaran MAE holdout per model (38 provinsi)", font:{size:12.5, color:t.text}, x:0, xanchor:"left", y:0.98},
+      xaxis: axis("", {showgrid:false, fixedrange:true}),
+      yaxis: axis("MAE (poin persen)", {fixedrange:true, zeroline:false})
+    }), Object.assign({}, PCONFIG, {displayModeBar:false}));
+    if (!gd._siagaBound){
+      gd._siagaBound = true;
+      gd.on("plotly_click", ev => {
+        const pt = ev.points && ev.points[0];
+        if (pt && pt.customdata) selectProvince(pt.customdata[2], {scroll:"peta"});
+      });
+    }
+  }
+
+  // ================= KAB/KOTA =================
+  function initKK(){
+    const select = document.getElementById("provSelect");
+    provinces.slice().sort((a,b) => a.provinsi.localeCompare(b.provinsi)).forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.provinsi_key; opt.textContent = p.provinsi;
+      select.appendChild(opt);
+    });
+    select.value = "JAWA BARAT";
+    select.addEventListener("change", () => selectProvince(select.value));
+    renderKKTipeChips();
+  }
+
+  function renderKKTipeChips(){
+    const host = document.getElementById("kkTipeChips");
+    host.innerHTML = '<span class="cat-label">Tampilkan:</span>';
+    [["kabupaten","Kabupaten"],["kota","Kota"]].forEach(pair => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip";
+      b.setAttribute("aria-pressed", String(state.kkTipe.has(pair[0])));
+      b.innerHTML = '<span class="clabel">' + pair[1] + '</span>';
+      b.addEventListener("click", () => {
+        if (state.kkTipe.has(pair[0])) state.kkTipe.delete(pair[0]); else state.kkTipe.add(pair[0]);
+        renderKKTipeChips(); renderKK();
+      });
+      host.appendChild(b);
+    });
+  }
+
+  function purgeWith(id, message){
+    const el = document.getElementById(id);
+    if (typeof Plotly !== "undefined") Plotly.purge(el);
+    el.innerHTML = '<div class="kk-empty">' + message + '</div>';
+  }
+
+  function renderKK(){
+    if (typeof Plotly === "undefined") return;
+    const key = document.getElementById("provSelect").value;
+    const t = theme();
+    const pov = (DATA.poverty_by_prov[key] || []).filter(i => state.kkTipe.has(i.tipe)).sort((a,b) => a.gk - b.gk);
+    const infl = (DATA.inflation_by_prov[key] || []).filter(i => state.kkTipe.has(i.tipe)).sort((a,b) => a.r - b.r);
+    const ROW = 24;
+
+    // Garis kemiskinan
+    const povStat = document.getElementById("povGapStat");
+    if (!pov.length){
+      povStat.innerHTML = "";
+      purgeWith("povPlot", "Data garis kemiskinan tidak tersedia untuk pilihan ini.");
+    } else {
+      const lo = pov[0], hi = pov[pov.length-1];
+      povStat.innerHTML = '<div class="g">Terendah<b>' + escapeHtml(lo.label) + '</b><span>' + fmtRp(lo.gk) + '</span></div>'
+        + '<div class="g">Tertinggi<b>' + escapeHtml(hi.label) + '</b><span>' + fmtRp(hi.gk) + '</span></div>'
+        + '<div class="g">Selisih<b>' + ((hi.gk - lo.gk)/lo.gk*100).toFixed(0) + '%</b></div>';
+      const base = cssVar("--series-1");
+      const el = document.getElementById("povPlot"); el.innerHTML = "";
+      Plotly.react(el, [{
+        type:"bar", orientation:"h", y: pov.map(i => i.label), x: pov.map(i => i.gk),
+        marker:{color: pov.map(i => (i === lo || i === hi) ? base : rgba(base, 0.55))},
+        text: pov.map(i => Math.round(i.gk/1000) + " rb"), textposition:"outside", cliponaxis:false,
+        textfont:{size:10.5, color:t.sec},
+        customdata: pov.map(i => i.tipe),
+        hovertemplate:"<b>%{y}</b> (%{customdata})<br>Garis kemiskinan: Rp %{x:,.0f}/kapita/bulan<extra></extra>"
+      }], baseLayout({
+        height: pov.length*ROW + 60, separators:",.", barcornerradius:3, bargap:0.3,
+        margin:{t:6, r:52, b:34, l:10},
+        xaxis: axis("Rp/kapita/bulan", {fixedrange:true, rangemode:"tozero", tickformat:",.0f"}),
+        yaxis: axis("", {fixedrange:true, showgrid:false, tickfont:{size:11, color:t.sec}})
+      }), Object.assign({}, PCONFIG, {displayModeBar:false}));
+    }
+
+    // Inflasi pangan
+    const inflStat = document.getElementById("inflGapStat");
+    if (!infl.length){
+      inflStat.innerHTML = "";
+      purgeWith("inflPlot", "Data pemantauan inflasi kab/kota tidak tersedia untuk pilihan ini.");
+    } else {
+      const lo = infl[0], hi = infl[infl.length-1];
+      inflStat.innerHTML = '<div class="g">Terendah<b>' + escapeHtml(lo.label) + '</b><span>' + fmt(lo.r,2) + '%</span></div>'
+        + '<div class="g">Tertinggi<b>' + escapeHtml(hi.label) + '</b><span>' + fmt(hi.r,2) + '%</span></div>'
+        + '<div class="g">Gap<b>' + (hi.r - lo.r).toFixed(1) + ' poin</b></div>';
+      const pos = cssVar("--div-pos"), neg = cssVar("--div-neg");
+      const absMax = Math.max(Math.abs(lo.r), Math.abs(hi.r)) * 1.25 || 1;
+      const el = document.getElementById("inflPlot"); el.innerHTML = "";
+      Plotly.react(el, [{
+        type:"bar", orientation:"h", y: infl.map(i => i.label), x: infl.map(i => i.r),
+        marker:{color: infl.map(i => { const c = i.r >= 0 ? pos : neg; return (i === lo || i === hi) ? c : rgba(c, 0.6); })},
+        text: infl.map(i => fmt(i.r,1) + "%"), textposition:"outside", cliponaxis:false,
+        textfont:{size:10.5, color:t.sec},
+        customdata: infl.map(i => i.tipe),
+        hovertemplate:"<b>%{y}</b> (%{customdata})<br>Inflasi pangan: %{x:+.2f}%<extra></extra>"
+      }], baseLayout({
+        height: infl.length*ROW + 60, barcornerradius:3, bargap:0.3,
+        margin:{t:6, r:40, b:34, l:10},
+        xaxis: axis("% kumulatif", {fixedrange:true, range:[-absMax, absMax], zeroline:true, zerolinecolor:t.base, zerolinewidth:1.5}),
+        yaxis: axis("", {fixedrange:true, showgrid:false, tickfont:{size:11, color:t.sec}})
+      }), Object.assign({}, PCONFIG, {displayModeBar:false}));
+    }
+  }
+
+  // ================= TABEL =================
+  function renderTableControls(){
+    renderCatChips(document.getElementById("tableCats"), "status_final");
+    renderFilterNote(document.getElementById("tableFilterNote"), "status_final");
+    document.querySelectorAll(".thf").forEach(btn => {
+      const f = btn.getAttribute("data-field");
+      btn.classList.toggle("active", fieldActive(f));
+      btn.innerHTML = FUNNEL + (fieldActive(f) ? catFilter[f].size : "");
+      btn.title = "Pilih kategori " + CATS[f].label.toLowerCase();
+    });
+  }
+
+  function compareBy(key){
+    if (key === "status" || key === "status_final") return (a,b) => STATUS_LEVEL[a[key]] - STATUS_LEVEL[b[key]];
+    if (key === "arah_proyeksi") return (a,b) => DIR_ORDER.indexOf(a[key]) - DIR_ORDER.indexOf(b[key]);
+    return (a,b) => typeof a[key] === "string" ? a[key].localeCompare(b[key]) : a[key] - b[key];
+  }
+
+  function initTable(){
+    document.getElementById("searchBox").addEventListener("input", e => { state.search = e.target.value.toLowerCase(); renderTableBody(); });
+    const ths = document.querySelectorAll("#dataTable thead th[data-key]");
+    ths.forEach(th => {
+      th.addEventListener("click", () => {
+        const key = th.getAttribute("data-key");
+        if (state.sortKey === key) state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+        else { state.sortKey = key; state.sortDir = (key === "rank" || key === "provinsi") ? "asc" : "desc"; }
+        ths.forEach(x => { x.classList.remove("sorted"); x.querySelector(".arrow").innerHTML = "&#9662;"; });
+        th.classList.add("sorted");
+        th.querySelector(".arrow").innerHTML = state.sortDir === "asc" ? "&#9652;" : "&#9662;";
+        renderTableBody();
+      });
+    });
+    document.querySelectorAll(".thf").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        if (popover && popover.dataset.field === btn.getAttribute("data-field")) closePopover();
+        else openPopover(btn, btn.getAttribute("data-field"));
+      });
+    });
+    renderTableControls();
+    renderTableBody();
+  }
+
+  function renderTableBody(){
+    const rows = provinces.filter(p => passes(p) && (!state.search || p.provinsi.toLowerCase().includes(state.search)));
+    const cmp = compareBy(state.sortKey), dir = state.sortDir === "asc" ? 1 : -1;
+    rows.sort((a,b) => (cmp(a,b) * dir) || (a.rank - b.rank));
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+    if (!rows.length){
+      tbody.innerHTML = '<tr><td colspan="10" class="table-empty">Tidak ada provinsi yang cocok dengan filter.</td></tr>';
+    }
+    rows.forEach(p => {
+      const tr = document.createElement("tr");
+      if (p.provinsi_key === state.selected) tr.className = "sel";
+      tr.title = "Lihat " + p.provinsi + " di peta";
+      tr.innerHTML = '<td class="num rank">' + p.rank + '</td>'
+        + '<td class="rowname">' + escapeHtml(p.provinsi) + '</td>'
+        + '<td class="num">' + fmtPlain(p.s_i,1) + '</td>'
+        + '<td class="num">' + fmtPlain(p.r_aktual,2) + '</td>'
+        + '<td class="num">' + fmtPlain(p.r_proj_3bulan,2) + '</td>'
+        + '<td>' + escapeHtml(p.arah_proyeksi) + '</td>'
+        + '<td>' + pillHTML(p.status) + '</td>'
+        + '<td>' + pillHTML(p.status_final) + '</td>'
+        + '<td>' + escapeHtml(p.best_model) + '</td>'
+        + '<td class="rec-cell">' + escapeHtml(p.rekomendasi) + '</td>';
+      tr.addEventListener("click", () => selectProvince(p.provinsi_key, {scroll:"peta"}));
+      tbody.appendChild(tr);
+    });
+    document.getElementById("countNote").textContent = "Menampilkan " + rows.length + " dari " + provinces.length + " provinsi.";
+  }
+
+  // Popover checkbox untuk kolom kategorik
+  let popover = null;
+  function openPopover(btn, field){
+    closePopover();
+    popover = document.createElement("div");
+    popover.className = "popover";
+    popover.dataset.field = field;
+    const cat = CATS[field];
+    let html = '<div class="ph">' + escapeHtml(cat.label) + '</div>';
+    cat.values.forEach(v => {
+      const n = provinces.filter(p => p[field] === v).length;
+      html += '<label><input type="checkbox" value="' + escapeHtml(v) + '"><span class="cdot" style="background:' + cat.color(v) + '"></span>'
+        + escapeHtml(v) + '<span class="ccount">' + n + '</span></label>';
+    });
+    html += '<div class="pf"><button class="linkbtn" data-act="all">Pilih semua</button><button class="linkbtn" data-act="invert">Balik pilihan</button></div>';
+    popover.innerHTML = html;
+    document.body.appendChild(popover);
+    popover.querySelectorAll("input").forEach(inp => inp.addEventListener("change", () => toggleCat(field, inp.value)));
+    popover.querySelector('[data-act="all"]').addEventListener("click", () => resetCat(field));
+    popover.querySelector('[data-act="invert"]').addEventListener("click", () => {
+      catFilter[field] = new Set(cat.values.filter(v => !catFilter[field].has(v)));
+      onFilterChange();
+    });
+    refreshPopover();
+    const r = btn.getBoundingClientRect();
+    popover.style.top = (r.bottom + 6) + "px";
+    popover.style.left = Math.max(8, Math.min(r.left - 8, window.innerWidth - popover.offsetWidth - 12)) + "px";
+    setTimeout(() => document.addEventListener("click", onDocClick), 0);
+  }
+  function refreshPopover(){
+    if (!popover) return;
+    const f = popover.dataset.field;
+    popover.querySelectorAll("input").forEach(inp => { inp.checked = catFilter[f].has(inp.value); });
+  }
+  function onDocClick(e){ if (popover && !e.composedPath().includes(popover)) closePopover(); }
+  function closePopover(){
+    if (!popover) return;
+    popover.remove(); popover = null;
+    document.removeEventListener("click", onDocClick);
+  }
+  window.addEventListener("scroll", closePopover, {passive:true});
+  window.addEventListener("resize", closePopover);
+
+  // ================= METODOLOGI =================
+  function renderFlow(){
+    const steps = [
+      {n:1,title:"Input Data",items:["Pengeluaran makanan &amp; nonmakanan per kapita","Total pengeluaran per kapita","Inflasi pangan m-to-m provinsi","Persentase penduduk miskin &amp; garis kemiskinan"]},
+      {n:2,title:"Pembentukan Indikator",items:["Porsi pengeluaran pangan s₁ = Fᵢ/Eᵢ","Tekanan harga aktual dari inflasi kumulatif 12 bulan"]},
+      {n:3,title:"Klasifikasi Kondisi Aktual",items:["Petakan s₁ &amp; inflasi aktual ke median nasional","4 kuadran → status awal (Tahan/Waspada/Rentan/Kritis)"]},
+      {n:4,title:"Proyeksi Risiko 3 Bulan",items:["Pilih model terbaik: Seasonal Naive, ETS, atau SARIMA","Bandingkan proyeksi vs 3 bulan aktual → arah risiko","Perbarui status maksimum 1 tingkat"]},
+      {n:5,title:"Tindak Lanjut",items:["Status final → rekomendasi per tingkat","Prioritas wilayah untuk pemantauan/intervensi"]}
+    ];
+    document.getElementById("flowGrid").innerHTML = steps.map(s =>
+      '<div class="flow-step"><div class="flow-num">' + s.n + '</div><h3>' + s.title + '</h3><ul>' + s.items.map(i => "<li>" + i + "</li>").join("") + '</ul></div>').join("");
+  }
+
+  function renderFollowup(){
+    const rows = [
+      {s:"Tahan", t:"Pemantauan rutin", d:"Pemantauan rutin standar terhadap harga dan konsumsi."},
+      {s:"Waspada", t:"Pengawasan berkala", d:"Pengawasan inflasi berkala tanpa intervensi langsung."},
+      {s:"Rentan", t:"Pemantauan prioritas", d:"Pemantauan prioritas dan penguatan mitigasi risiko."},
+      {s:"Kritis", t:"Verifikasi lapangan", d:"Verifikasi lapangan segera dan simulasi besaran bantuan."}
+    ];
+    document.getElementById("followupGrid").innerHTML = rows.map(r =>
+      '<div class="followup" style="border-left:4px solid var(' + STATUS_COLOR_VAR[r.s] + ')">'
+      + '<div class="ft"><span style="width:14px;height:14px;display:flex;color:var(' + STATUS_COLOR_VAR[r.s] + ')">' + ICONS[r.s] + '</span><span>' + r.s + ' — ' + r.t + '</span></div>'
+      + '<div class="fd">' + r.d + '</div></div>').join("");
+  }
+
+  // ================= RENDER =================
+  function renderAllPlots(){
+    if (typeof Plotly === "undefined") return;
+    renderScatter();
+    renderHeatmap();
+    renderSensitivity();
+    renderModelEval();
+    renderKK();
+  }
+
+  document.getElementById("metaProv").textContent = provinces.length;
+  document.getElementById("metaKK").textContent = GEO.features.length;
+  initTheme();
+  initScrollspy();
+  renderTiles();
+  renderHeadline();
+  renderHiddenCallout();
+  initMap();
+  renderMapToolbar();
+  initSideListSort();
+  renderSideDetail();
+  renderSideList(false);
+  initKK();
+  initTable();
+  renderFlow();
+  renderFollowup();
+  if (typeof Plotly === "undefined"){
+    ["scatterPlot","heatmapPlot","sensitivityPlot","modelCountPlot","modelMaePlot","povPlot","inflPlot"].forEach(id => {
+      document.getElementById(id).innerHTML = '<div class="kk-empty">Grafik memerlukan koneksi internet untuk memuat Plotly.</div>';
+    });
+  } else {
+    initScatterControls();
+    renderHeatmap();
+    renderSensitivity();
+    renderModelEval();
+    renderKK();
+  }
+})();
+</script>
+</body>
+</html>
